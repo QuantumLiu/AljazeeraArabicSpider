@@ -21,27 +21,35 @@ def it_page(per=12):
     max_index=get_maxindex(root.format(start=48),per)
     pages=(root.format(start=s) for s in range(0,max_index,per))
     return pages
+def pad(l,m=12):
+    if len(l)<m:
+        l+=(l if l else [''])[-1](m-len())
+    return l
 def parse(page):
-    r_cur=r'&start=(\d*?)&'
-    cur=int(re.findall(r_cur,page)[0])
+    r_start=r'&start=(\d*?)&'
+    start=int(re.findall(r_start,page)[0])
     keys=['image','title','description_arabic']
     img_root='http://www.aljazeera.net/File/GetImageCustom/'
-    r_root=r'<metatag.{key} type=\'\'><!\[CDATA\[(.*?)\]\]></metatag.{key}>'
+    r_root=r'<metatag.{key} type=[^>]*?><!\[CDATA\[(.*?)\]\]></metatag.{key}>'
     r_url=r'<url type=\'\'><!\[CDATA\[(.*?)\]\]></url>'
     r_dic={k:r_root.format(key=k) for k in keys}
     r_dic['url']=r_url
     ua={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
-    print('Crawling page : {cur}'.format(cur=cur))
     res=requests.get(page,headers=ua)
     res.encoding='utf-8'
     data={k:re.findall(v,res.text) for k,v in r_dic.items()}
     data['image']=[img_root+n for n in data.get('image')]
     keys=list(data.keys())
-    z=zip(*(data.get(key) for key in keys))
+    datas=[data.get(key) for key in keys]
+    m=max(map(lambda x:len(x),datas))
+    print('Crawling : {start} to {end}'.format(start=start,end=start+m))
+    datas=[pad(l,m) for l in datas]
+    z=zip(*datas)
     articels=[dict(zip(keys,d)) for d in z]
     print('Got {l} articels'.format(l=len(articels)))
     if not articels:
         print('Error,no articels got.\nxml text: '+res.text)
+        print(''.join([data.get(key) for key in keys]))
     return articels
 def crawl_s():
     return [parse(p) for p in it_page()]
