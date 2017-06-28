@@ -41,16 +41,23 @@ def parse(page):
     keys=['title','description_arabic','image','url']
     r_data=r'<(?:metatag\.)*?(?:{p})+?[^>]*?><!\[CDATA\[(.*?)\]\]></(?:metatag\.)*?({p})>'.format(p='|'.join(keys))
     ua={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
-    res=requests.get(page,headers=ua)
-    res.encoding='utf-8'
-    datas=[(i[1].replace('metatag.',''),i[0]) for i in re.findall(r_data,res.text)]
-    articels=l2dl(datas)
-    l=len(articels)
-    print('Crawling : {start} to {end}'.format(start=start,end=start+l))
-    print('Got {l} articels'.format(l=l))
-    if not articels:
-        print('Error,no articels got.\nxml text: '+res.text)
-    return articels
+    try:
+        res=requests.get(page,headers=ua)
+        res.encoding='utf-8'
+        datas=[(i[1].replace('metatag.',''),i[0]) for i in re.findall(r_data,res.text)]
+        articels=l2dl(datas)
+        l=len(articels)
+        print('Crawling : {start} to {end}'.format(start=start,end=start+l))
+        print('Got {l} articels'.format(l=l))
+        if not articels:
+            print('Error,no articels got.\nxml text: '+res.text)
+        return articels
+    except:
+        log=traceback.format_exc()
+        with open('alj_log.txt','a') as f:
+            f.write('\n'+log)
+        print('Got error:\n'+log+'\nReturn []')
+        return []
 def crawl_s():
     return [parse(p) for p in it_page()]
 def crawl_p():
